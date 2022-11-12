@@ -2,6 +2,7 @@ import json
 
 from django.http import JsonResponse
 from django.templatetags.static import static
+import phonenumbers
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -65,22 +66,51 @@ def product_list_api(request):
 def register_order(request):
     order_request = request.data
 
-    try:
-        order_products = order_request['products']
-    except KeyError:
+    required_fields = {
+        'products': list,
+        'firstname': str,
+        'lastname': str,
+        'phonenumber': str,
+        'address': str,
+    }
+
+    missing_fields = [
+        field for field in required_fields
+        if field not in order_request.keys()
+    ]
+
+    if missing_fields:
+        return Response({'message': f"{', '.join(missing_fields)} field missing"},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    empty_fields = [
+        field for field in required_fields
+        if not order_request[field]
+    ]
+
+    if empty_fields:
+        return Response({'message': f"{', '.join(empty_fields)} field can`t be empty or None"},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    wrong_type_fields = [
+        (field_name, field_type) for field_name, field_type in required_fields.items()
+        if not isinstance(order_request[field_name], field_type)
+    ]
+    if wrong_type_fields:
+        messages = [
+            f'{field_name}: Это поле должно быть типа {field_type}'
+            for field_name, field_type in wrong_type_fields
+        ]
         return Response(
-            {"message": "No product list in the order"},
+            {'message': ', '.join(messages)},
             status=status.HTTP_400_BAD_REQUEST
         )
-
-    if not isinstance(order_products, list):
+    phonenumber = phonenumbers.parse(order_request['phonenumber'])
+    if not phonenumbers.is_valid_number(phonenumber):
         return Response(
-            {"message": "Products must be a list"},
+            {'message': 'phonenumber is wrong'},
             status=status.HTTP_400_BAD_REQUEST
         )
-
-    if not order_request['products']:
-        return Response({"message": "Products can`t be empty"}, status=status.HTTP_400_BAD_REQUEST)
 
     order = Order.objects.create(
         first_name=order_request['firstname'],
@@ -89,8 +119,14 @@ def register_order(request):
         address=order_request['address'],
     )
 
-    for order_request_product in order_products:
-        product = Product.objects.get(pk=order_request_product['product'])
+    for order_request_product in order_request['products']:
+        try:
+            product = Product.objects.get(pk=order_request_product['product'])
+        except Product.DoesNotExist:
+            return Response(
+                {'message': 'Product not exists'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         OrderProduct.objects.create(
             order=order,
             product=product,
