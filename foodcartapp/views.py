@@ -2,7 +2,9 @@ import json
 
 from django.http import JsonResponse
 from django.templatetags.static import static
+from rest_framework import status
 from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 from .models import Product, Order, OrderProduct
 
@@ -63,6 +65,23 @@ def product_list_api(request):
 def register_order(request):
     order_request = request.data
 
+    try:
+        order_products = order_request['products']
+    except KeyError:
+        return Response(
+            {"message": "No product list in the order"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    if not isinstance(order_products, list):
+        return Response(
+            {"message": "Products must be a list"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    if not order_request['products']:
+        return Response({"message": "Products can`t be empty"}, status=status.HTTP_400_BAD_REQUEST)
+
     order = Order.objects.create(
         first_name=order_request['firstname'],
         last_name=order_request['lastname'],
@@ -70,8 +89,8 @@ def register_order(request):
         address=order_request['address'],
     )
 
-    for order_request_product in order_request['products']:
-        product = Product.objects.get(id=order_request_product['product'])
+    for order_request_product in order_products:
+        product = Product.objects.get(pk=order_request_product['product'])
         OrderProduct.objects.create(
             order=order,
             product=product,
