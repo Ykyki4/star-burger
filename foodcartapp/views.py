@@ -1,5 +1,7 @@
 from django.http import JsonResponse
 from django.templatetags.static import static
+from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.serializers import ValidationError
 
@@ -73,8 +75,9 @@ def register_order(request):
 
     order_products_fields = serializer.validated_data['products']
     order_products = [
-        OrderProduct(order=order, **fields) for fields in order_products_fields
+        OrderProduct(order=order, price=fields['product'].price, **fields) for fields in order_products_fields
     ]
     OrderProduct.objects.bulk_create(order_products)
 
-    return JsonResponse({})
+    serialized_response = OrderSerializer(order)
+    return Response(serialized_response.data, status=status.HTTP_201_CREATED)
