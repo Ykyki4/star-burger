@@ -1,13 +1,10 @@
-import json
-
 from django.http import JsonResponse
 from django.templatetags.static import static
-import phonenumbers
-from rest_framework import status
 from rest_framework.decorators import api_view
-from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 
 from .models import Product, Order, OrderProduct
+from .serializers import OrderSerializer
 
 
 def banners_list_api(request):
@@ -64,74 +61,20 @@ def product_list_api(request):
 
 @api_view(['POST'])
 def register_order(request):
-    order_request = request.data
-
-    required_fields = {
-        'products': list,
-        'firstname': str,
-        'lastname': str,
-        'phonenumber': str,
-        'address': str,
-    }
-
-    missing_fields = [
-        field for field in required_fields
-        if field not in order_request.keys()
-    ]
-
-    if missing_fields:
-        return Response({'message': f"{', '.join(missing_fields)} field missing"},
-                        status=status.HTTP_400_BAD_REQUEST)
-
-    empty_fields = [
-        field for field in required_fields
-        if not order_request[field]
-    ]
-
-    if empty_fields:
-        return Response({'message': f"{', '.join(empty_fields)} field can`t be empty or None"},
-                        status=status.HTTP_400_BAD_REQUEST)
-
-    wrong_type_fields = [
-        (field_name, field_type) for field_name, field_type in required_fields.items()
-        if not isinstance(order_request[field_name], field_type)
-    ]
-    if wrong_type_fields:
-        messages = [
-            f'{field_name}: Это поле должно быть типа {field_type}'
-            for field_name, field_type in wrong_type_fields
-        ]
-        return Response(
-            {'message': ', '.join(messages)},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    phonenumber = phonenumbers.parse(order_request['phonenumber'])
-    if not phonenumbers.is_valid_number(phonenumber):
-        return Response(
-            {'message': 'phonenumber is wrong'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    serializer = OrderSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
 
     order = Order.objects.create(
-        first_name=order_request['firstname'],
-        last_name=order_request['lastname'],
-        phone=order_request['phonenumber'],
-        address=order_request['address'],
+        firstname=serializer.validated_data['firstname'],
+        lastname=serializer.validated_data['lastname'],
+        phonenumber=serializer.validated_data['phonenumber'],
+        address=serializer.validated_data['address'],
     )
 
-    for order_request_product in order_request['products']:
-        try:
-            product = Product.objects.get(pk=order_request_product['product'])
-        except Product.DoesNotExist:
-            return Response(
-                {'message': 'Product not exists'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        OrderProduct.objects.create(
-            order=order,
-            product=product,
-            quantity=order_request_product['quantity'],
-            price=product.price
-        )
+    order_products_fields = serializer.validated_data['products']
+    order_products = [
+        OrderProduct(order=order, **fields) for fields in order_products_fields
+    ]
+    OrderProduct.objects.bulk_create(order_products)
 
     return JsonResponse({})
