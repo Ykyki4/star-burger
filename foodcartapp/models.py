@@ -145,6 +145,12 @@ class Order(models.Model):
         ('Packed', 'Собран'),
         ('Delivered', 'Доставлен'),
     )
+
+    PAYMENT_TYPE_CHOICES = (
+        ('Cash', 'Наличными'),
+        ('Electronically', 'Электронно')
+    )
+
     firstname = models.CharField('Имя', max_length=50)
     lastname = models.CharField('Фамилия', max_length=50)
     phonenumber = PhoneNumberField('Номер телефона', db_index=True)
@@ -161,6 +167,14 @@ class Order(models.Model):
     registrated_at = models.DateTimeField('Зарегестрирован в', default=timezone.now, db_index=True)
     called_at = models.DateTimeField('Утверждём в', null=True, blank=True, db_index=True)
     delivered_at = models.DateTimeField('Доставлен в', null=True, blank=True, db_index=True)
+
+    payment_type = models.CharField(
+        'Способ оплаты',
+        max_length=15,
+        choices=PAYMENT_TYPE_CHOICES,
+        default='Cash',
+        db_index=True,
+    )
 
     objects = OrderQuerySet.as_manager()
 
