@@ -155,6 +155,7 @@ class Order(models.Model):
         default='New',
         db_index=True,
     )
+    comment = models.TextField('Комментарий', blank=True)
 
     objects = OrderQuerySet.as_manager()
 
