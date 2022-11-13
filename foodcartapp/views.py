@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from django.db import transaction
 from django.templatetags.static import static
 from rest_framework import status
 from rest_framework.response import Response
@@ -62,6 +63,7 @@ def product_list_api(request):
 
 
 @api_view(['POST'])
+@transaction.atomic
 def register_order(request):
     serializer = OrderSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
