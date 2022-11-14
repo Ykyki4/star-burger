@@ -137,6 +137,20 @@ class OrderQuerySet(models.QuerySet):
             )
         )
 
+    def get_available_restaurants(self):
+        restaurant_menu_items = RestaurantMenuItem.objects.select_related(
+            'restaurant', 'product'
+        )
+        for order in self:
+            for order_product in order.products.all():
+                product_restaurants = set(
+                    menu_item.restaurant for menu_item in restaurant_menu_items
+                    if order_product.product == menu_item.product
+                    and menu_item.availability
+                )
+            order.available_restaurants = product_restaurants
+        return self
+
 
 class Order(models.Model):
     ORDER_STATUS_CHOICES = (
@@ -174,6 +188,16 @@ class Order(models.Model):
         choices=PAYMENT_TYPE_CHOICES,
         default='Cash',
         db_index=True,
+    )
+
+    restaurant = models.ForeignKey(
+        Restaurant,
+        on_delete=models.SET_NULL,
+        related_name='orders',
+        verbose_name='Ресторан',
+        help_text='Ресторан выполнения заказа',
+        blank=True,
+        null=True,
     )
 
     objects = OrderQuerySet.as_manager()
