@@ -6,10 +6,11 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 from environs import Env
-import requests
 from geopy.distance import distance
 
-from foodcartapp.models import Product, Restaurant, Order, RestaurantMenuItem
+from foodcartapp.models import Product, Restaurant, Order
+from geoapp.models import Location
+from geoapp.geoscripts import get_or_create_locations
 
 
 class Login(forms.Form):
@@ -91,57 +92,28 @@ def view_restaurants(request):
     })
 
 
-def fetch_coordinates(apikey, address):
-    base_url = "https://geocode-maps.yandex.ru/1.x"
-    response = requests.get(base_url, params={
-        "geocode": address,
-        "apikey": apikey,
-        "format": "json",
-    })
-    response.raise_for_status()
-    found_places = response.json()['response']['GeoObjectCollection']['featureMember']
-
-    if not found_places:
-        return None
-
-    most_relevant = found_places[0]
-    lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
-    return lon, lat
-
-
-def fetch_coordinates(apikey, address):
-    base_url = "https://geocode-maps.yandex.ru/1.x"
-    response = requests.get(base_url, params={
-        "geocode": address,
-        "apikey": apikey,
-        "format": "json",
-    })
-    response.raise_for_status()
-    found_places = response.json()['response']['GeoObjectCollection']['featureMember']
-
-    if not found_places:
-        return None
-
-    most_relevant = found_places[0]
-    lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
-    return lon, lat
-
-
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    env = Env()
-    env.read_env()
-    y_api_key = env('YANDEX_API_KEY')
+    orders = Order.objects.exclude(status='Delivered').get_price().get_available_restaurants()
 
-    orders = Order.objects.get_price().get_available_restaurants()
+    order_addresses = [order.address for order in orders]
+    restaurant_addresses = [
+        restaurant.address for restaurant in Restaurant.objects.all()
+    ]
+
+    locations = get_or_create_locations(
+        *order_addresses, *restaurant_addresses
+    )
 
     for order in orders:
-        order_location = fetch_coordinates(y_api_key, order.address)
+        order_location = locations.get(order.address, None)
         for restaurant in order.available_restaurants:
-            restaurant_location = fetch_coordinates(y_api_key, restaurant.address)
+            restaurant_location = locations.get(restaurant.address, None)
+
             restaurant.raw_distance = distance(
                order_location, restaurant_location
             ).km
+            
             restaurant.distance = f"{int(restaurant.raw_distance * 1000)} м"
 
         sorted_available_restaurants = sorted(
