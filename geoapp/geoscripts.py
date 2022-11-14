@@ -8,6 +8,7 @@ env = Env()
 env.read_env()
 y_api_key = env('YANDEX_API_KEY')
 
+
 def fetch_coordinates(address, apikey=y_api_key):
     base_url = "https://geocode-maps.yandex.ru/1.x"
     response = requests.get(base_url, params={

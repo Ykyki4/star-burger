@@ -5,11 +5,9 @@ from django.urls import reverse_lazy
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
-from environs import Env
 from geopy.distance import distance
 
 from foodcartapp.models import Product, Restaurant, Order
-from geoapp.models import Location
 from geoapp.geoscripts import get_or_create_locations
 
 
@@ -113,7 +111,7 @@ def view_orders(request):
             restaurant.raw_distance = distance(
                order_location, restaurant_location
             ).km
-            
+
             restaurant.distance = f"{int(restaurant.raw_distance * 1000)} м"
 
         sorted_available_restaurants = sorted(
