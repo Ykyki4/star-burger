@@ -1,15 +1,10 @@
-from environs import Env
 import requests
 
 from .models import Location
+from star_burger.settings import Y_API_KEY
 
 
-env = Env()
-env.read_env()
-y_api_key = env('YANDEX_API_KEY')
-
-
-def fetch_coordinates(address, apikey=y_api_key):
+def fetch_coordinates(address, apikey=Y_API_KEY):
     base_url = "https://geocode-maps.yandex.ru/1.x"
     response = requests.get(base_url, params={
         "geocode": address,
