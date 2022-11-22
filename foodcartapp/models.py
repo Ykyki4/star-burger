@@ -186,7 +186,7 @@ class Order(models.Model):
         'Способ оплаты',
         max_length=15,
         choices=PAYMENT_TYPE_CHOICES,
-        default='Cash',
+        blank=True,
         db_index=True,
     )
 
