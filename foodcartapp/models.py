@@ -127,7 +127,7 @@ class RestaurantMenuItem(models.Model):
 
 
 class OrderQuerySet(models.QuerySet):
-    def get_price(self):
+    def get_prices(self):
         return self.annotate(
             price=Sum(
                 ExpressionWrapper(
