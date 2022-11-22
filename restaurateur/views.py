@@ -108,11 +108,14 @@ def view_orders(request):
         for restaurant in order.available_restaurants:
             restaurant_location = locations.get(restaurant.address, None)
 
-            restaurant.raw_distance = distance(
-               order_location, restaurant_location
-            ).km
+            if order_location:
+                restaurant.raw_distance = distance(
+                    order_location, restaurant_location
+                ).km
 
-            restaurant.distance = f"{int(restaurant.raw_distance * 1000)} м"
+                restaurant.distance = f"{int(restaurant.raw_distance * 1000)} м"
+            else:
+                restaurant.distance = f"Локация заказа по адрессу '{order.address}' не найдена"
 
         sorted_available_restaurants = sorted(
             order.available_restaurants,
