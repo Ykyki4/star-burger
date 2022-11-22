@@ -131,7 +131,7 @@ class OrderQuerySet(models.QuerySet):
         return self.annotate(
             price=Sum(
                 ExpressionWrapper(
-                    F('products__price') * F('products__quantity'),
+                    F('order_products__price') * F('order_products__quantity'),
                     output_field=models.PositiveIntegerField()
                 )
             )
@@ -142,7 +142,7 @@ class OrderQuerySet(models.QuerySet):
             'restaurant', 'product'
         )
         for order in self:
-            for order_product in order.products.all():
+            for order_product in order.order_products.all():
                 product_restaurants = set(
                     menu_item.restaurant for menu_item in restaurant_menu_items
                     if order_product.product == menu_item.product
@@ -190,12 +190,11 @@ class Order(models.Model):
         db_index=True,
     )
 
-    restaurant = models.ForeignKey(
+    fulfillment_restaurant = models.ForeignKey(
         Restaurant,
         on_delete=models.SET_NULL,
         related_name='orders',
-        verbose_name='Ресторан',
-        help_text='Ресторан выполнения заказа',
+        verbose_name='Ресторан выполнения заказа',
         blank=True,
         null=True,
     )
@@ -214,13 +213,13 @@ class OrderProduct(models.Model):
     order = models.ForeignKey(
         Order,
         on_delete=models.CASCADE,
-        related_name='products',
+        related_name='order_products',
         verbose_name='Заказ',
     )
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
-        related_name='orders',
+        related_name='order_products',
         verbose_name='Продукт',
     )
     quantity = models.PositiveIntegerField(
