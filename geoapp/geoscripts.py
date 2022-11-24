@@ -1,10 +1,10 @@
 import requests
 
 from .models import Location
-from star_burger.settings import Y_API_KEY
+from django.conf import settings
 
 
-def fetch_coordinates(address, apikey=Y_API_KEY):
+def fetch_coordinates(address, apikey=settings.Y_API_KEY):
     base_url = "https://geocode-maps.yandex.ru/1.x"
     response = requests.get(base_url, params={
         "geocode": address,
@@ -27,6 +27,7 @@ def get_or_create_locations(*addresses):
         location.address: (location.lon, location.lat)
         for location in Location.objects.filter(address__in=addresses)
     }
+    locations = []
     for address in addresses:
         if address in existed_locations.keys():
             continue
@@ -34,8 +35,7 @@ def get_or_create_locations(*addresses):
         if not coordinates:
             continue
         lon, lat = coordinates
-        location = Location.objects.create(
-            address=address, lon=lon, lat=lat
-        )
-        existed_locations[location.address] = (location.lon, location.lat)
+        locations += Location(address=address, lon=lon, lat=lat)
+        existed_locations[address] = (lon, lat)
+    Location.objects.bulk_create(locations)
     return existed_locations
