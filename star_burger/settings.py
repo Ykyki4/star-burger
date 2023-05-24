@@ -88,7 +88,8 @@ MEDIA_URL = '/media/'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgres://{0}'.format(env('DB_URL'))
+        default='sqlite:////{0}'.format(os.path.join(BASE_DIR, 'db.sqlite3'))
+        # default='postgres://{0}'.format(env('DB_URL'))
     )
 }
 
