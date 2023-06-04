@@ -152,6 +152,47 @@ Parcel будет следить за файлами в каталоге `bundle
 - `SECRET_KEY` — секретный ключ проекта. Он отвечает за шифрование на сайте. Например, им зашифрованы все пароли на вашем сайте.
 - `ALLOWED_HOSTS` — [см. документацию Django](https://docs.djangoproject.com/en/3.1/ref/settings/#allowed-hosts)
 
+## Как запустить сайт используя docker-compose
+
+### dev версия.
+
+Необходимо создать .env файл как при обычном запуске dev версии сайта, также добавить туда перменные:
+
+- DB_URL
+- POSTGRES_USER
+- POSTGRES_PASSWORD
+- POSTGRES_DB
+
+[Для создания постгрес базы данных](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-20-04)
+
+[Как сделать ссылку на базу данных](https://github.com/jazzband/dj-database-url/)
+
+Далее установите [докер](https://www.docker.com/)
+
+Соберите сайт командой:
+```
+docker-compose -f docker-compose.dev.yaml build
+```
+
+После сборки, поднимите сайт:
+```
+docker-compose -f docker-compose.dev.yaml up
+```
+
+### prod версия.
+
+Добавьте айпи вашего сервера в переменную окружения ALLOWED_HOSTS.
+
+Соберите сайт командой:
+```
+docker-compose -f docker-compose.prod.yaml build
+```
+
+После сборки, поднимите сайт:
+```
+docker-compose -f docker-compose.prod.yaml up
+```
+
 ## Цели проекта
 
 Код написан в учебных целях — это урок в курсе по Python и веб-разработке на сайте [Devman](https://dvmn.org). За основу был взят код проекта [FoodCart](https://github.com/Saibharath79/FoodCart).
