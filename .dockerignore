@@ -1,0 +1,11 @@
+.parcel-cache/
+.idea/
+venv/
+.gitignore
+db.json
+*.sqlite3
+*.md
+
+__pycache__/
+*.py[cod]
+*$py.class
