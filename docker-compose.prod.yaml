@@ -4,15 +4,24 @@ services:
   web: 
     build:
       context: .
-      dockerfile: Dockerfile.prod
+      dockerfile: Dockerfile.python.prod
     volumes:
       - static_volume:/code/static
       - media_volume:/code/media
+      - bundles_volume:/code/bundles
     ports: 
       - 8000
     depends_on:
       - db
+      - node
       
+  node:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    volumes:
+      - bundles_volume:/code/bundles
+
   db:
     image: postgres:14.8-alpine
     volumes:
@@ -37,3 +46,4 @@ volumes:
   postgres_data:
   media_volume:
   static_volume:
+  bundles_volume:
