@@ -1,0 +1,23 @@
+#!/bin/bash
+set -e
+git pull
+pip3 install -r requirements.txt
+python3 manage.py migrate --noinput
+python3 manage.py collectstatic --noinput
+npm ci --dev
+./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
+docker-compose -f docker-compose.prod.yaml build
+systemctl reload star-burger
+systemctl reload nginx
+curl --request POST \
+     --url https://api.rollbar.com/api/1/deploy \
+     --header 'X-Rollbar-Access-Token: 2a0cee9d6a1d4f4985fc7cf4d0579008' \
+     --header 'accept: application/json' \
+     --header 'content-type: application/json' \
+     --data '
+{
+     "environment": "production",
+     "revision": "$(git rev-parse HEAD)"
+}
+'
+echo "Success deployed"
