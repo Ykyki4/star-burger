@@ -3,12 +3,14 @@ version: '3'
 services:
   web: 
     build:
-      context: .
-      dockerfile: Dockerfile.python.prod
+      context: ../backend/
+      dockerfile: ../backend/Dockerfile.prod
     volumes:
       - static_volume:/code/static
       - media_volume:/code/media
       - bundles_volume:/code/bundles
+    env_file:
+      - .env   
     ports: 
       - 8000
     depends_on:
@@ -17,8 +19,8 @@ services:
       
   node:
     build:
-      context: .
-      dockerfile: Dockerfile.node
+      context: ../frontend/
+      dockerfile: ../frontend/Dockerfile
     volumes:
       - bundles_volume:/code/bundles
 
